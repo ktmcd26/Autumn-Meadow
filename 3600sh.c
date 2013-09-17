@@ -8,10 +8,12 @@
  * details.
  */
 
-#include "3600sh.h"
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include "3600sh.h"
 
 #define USE(x) (x) = (x)
 #define CMDLEN 40
@@ -24,16 +26,24 @@ int main(int argc, char*argv[]) {
   USE(argc);
   USE(argv);
   setvbuf(stdout, NULL, _IONBF, 0); 
-  struct passwd pwd;
-  const struct passwd* uidata = getpwuid(getuid());
-  char*name =(char*) uidata->pw_name;
+  
+  // Obtaining necessary information for cmd prompt
+  char host[128];
+  host[1027] = '\0';
+  gethostname(host, 127);
+  computer_name(host);
+  struct passwd* user = getpwuid(getuid()); 
+  char* usrname = user->pw_name;
+  char* directory = user->pw_dir;
+  
   char*command; //will be char** later
   size_t*size;
   *size = 0;
   // Main loop that reads a command and executes it
   while (1) {         
-    // You should issue the prompt here
-      printf("%s :",name);
+    // Issue the prompt
+      printf("%s@%s:%s> ", usrname, host, directory);
+      
 	  command = getLine(size);
 	  printf("%d %s\n",*size,command);
     // You should read in the command and execute it here
@@ -53,6 +63,17 @@ int main(int argc, char*argv[]) {
 void do_exit() {
   printf("So long and thanks for all the fish!\n");
   exit(0);
+}
+
+// Function accepts a host name and edits to only 
+// have the computer name
+//
+void computer_name(char* hostname) {
+  int counter;
+
+  for(counter = 0; hostname[counter] != '.'; counter++);
+
+  hostname[counter] = '\0';
 }
 
 //collects line of user input
